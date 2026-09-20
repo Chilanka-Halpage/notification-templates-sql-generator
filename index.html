@@ -131,6 +131,7 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:8px 16px 24
     <div class="preview" id="p_subL"></div>
 
     <div class="opts" style="margin:12px 0 0"><label><input type="checkbox" id="rebrand"><b>Rebranded template</b> <small>(builds styled header + body HTML, m149_template_mode = 1)</small></label>
+      <label class="upd-chk"><input type="checkbox" id="boldGreet">bold first line (e.g. Dear Client,)</label>
       <label id="umWrap" class="upd-chk" style="display:none"><input type="checkbox" id="u_mode">include m149_template_mode in UPDATE script</label></div>
     <div id="hdrWrap" style="display:none">
       <div class="pair">
@@ -236,6 +237,12 @@ const ARABIC=['smsL','subL','emL','pushL'];
 ARABIC.push('hdrL');
 // Rebranded template: the email box holds only the body text; the app builds the full styled HTML.
 // Accepts plain text (blank line = new paragraph, newline = <br>), HTML paragraphs, or a full <html> page.
+// Optional: bold the first line of plain text (the greeting, e.g. "Dear Client,")
+function boldFirst(t){
+  if(!$('boldGreet').checked) return t;
+  const m=/^([^\r\n]+)([\s\S]*)$/.exec(t);
+  return m?'<b>'+m[1].trim()+'</b>'+m[2]:t;
+}
 function buildRebrand(content,header,rtl){
   if(!content) return '';
   const bm=/<body[^>]*>([\s\S]*)<\/body>/i.exec(content);
@@ -243,7 +250,7 @@ function buildRebrand(content,header,rtl){
   const dir=rtl?'direction:rtl; text-align:right;':'direction:ltr;';
   const pStyle=`<p style="${dir}">`;
   if(!/<(p|div|table)[\s>]/i.test(content))
-    content=content.split(/\r?\n\s*\r?\n/).map(p=>pStyle+p.trim().replace(/\r?\n/g,'<br>')+'</p>').join('');
+    content=boldFirst(content).split(/\r?\n\s*\r?\n/).map(p=>pStyle+p.trim().replace(/\r?\n/g,'<br>')+'</p>').join('');
   const band=header?`<div style="background:${$('hdrColor').value}; padding:1px 40px;"><p style="color:#ffffff; font-size:24px; font-weight:700; line-height:1.2; ${dir}">${header}</p></div>`:'';
   return `<html><body style="font-family:Calibri;">${band}<div style="padding:20px 40px 0 40px;">${content}</div></body></html>`;
 }
@@ -253,7 +260,7 @@ function wrapPlain(content,rtl){
   const bm=/<body[^>]*>([\s\S]*)<\/body>/i.exec(content);
   if(bm) content=bm[1].trim();
   if(!/<(p|div|table)[\s>]/i.test(content))
-    content='<p'+(rtl?' align="right"':'')+'>'+content.replace(/\r?\n/g,'<br>')+'</p>';
+    content='<p'+(rtl?' align="right"':'')+'>'+boldFirst(content).replace(/\r?\n/g,'<br>')+'</p>';
   return '<html'+(rtl?' dir="rtl"':'')+'><body>'+content+'</body></html>';
 }
 function emailEnglish(){
@@ -384,7 +391,7 @@ function render(){
 }
 
 // ---- state ----
-const IDS=['u_cs','u_mode','rebrand','hdr','hdrL','hdrColor','table','cs','eventId','inst','customType','extId','sms','smsL','sub','subL','em','emL','push','pushL',
+const IDS=['boldGreet','u_cs','u_mode','rebrand','hdr','hdrL','hdrColor','table','cs','eventId','inst','customType','extId','sms','smsL','sub','subL','em','emL','push','pushL',
   'f_smsL','f_subL','f_emL','f_pushL','u_sms','u_sub','u_em','u_push','oDefOff','oCommit','oSkipEmpty'];
 function state(){const s={};IDS.forEach(i=>s[i]=$(i).type==='checkbox'?$(i).checked:$(i).value);return s;}
 function apply(s){IDS.forEach(i=>{if(i in s){$(i).type==='checkbox'?$(i).checked=s[i]:$(i).value=s[i];}});}

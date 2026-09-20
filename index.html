@@ -413,8 +413,8 @@ $('loadEx').onclick=()=>{apply({eventId:'1012',customType:'1',inst:'',extId:'',p
   sms:'Dear Client,>br<>br<Loan Amount of Margin Trading ${Amt} ${Currency} has been deposited to your Investment Account No.: ${InvestAcc}>br<>br<Date and time: ${CrtdDate}',
   smsL:'عزيزي العميل،>br<>br<تم إيداع مبلغ التمويل للتداول بالهامش ${Currency} ${Amt} إلى حسابك الاستثماري رقم: ${InvestAcc}>br<>br<التاريخ والوقت: ${CrtdDate}',
   sub:'Cash Deposit Notification',subL:'إشعار إيداع نقدي',
-  em:'<html><body><p>Dear Client,<br><br>Loan Amount of Margin Trading ${Amt} ${Currency} has been deposited to your Investment Account No.: ${InvestAcc}<br><br>Date and time: ${CrtdDate}</p></body></html>',
-  emL:'<html dir="rtl"><body><p align="right">عزيزي العميل،<br><br>تم إيداع مبلغ التمويل للتداول بالهامش ${Currency} ${Amt} إلى حسابك الاستثماري رقم: ${InvestAcc}<br><br>التاريخ والوقت: ${CrtdDate}</p></body></html>'});
+  em:'Dear Client,\n\nLoan Amount of Margin Trading ${Amt} ${Currency} has been deposited to your Investment Account No.: ${InvestAcc}\n\nDate and time: ${CrtdDate}',
+  emL:'عزيزي العميل،\n\nتم إيداع مبلغ التمويل للتداول بالهامش ${Currency} ${Amt} إلى حسابك الاستثماري رقم: ${InvestAcc}\n\nالتاريخ والوقت: ${CrtdDate}'});
   ARABIC.forEach(i=>bidiFix($(i)));render();};
 
 try{localStorage.removeItem("ntpgen");}catch(e){}   // always start blank; example only via the button

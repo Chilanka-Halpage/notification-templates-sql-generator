@@ -24,18 +24,6 @@ Everything runs in your browser. Nothing you type is sent to a server or stored.
 
 Open `index.html` in any modern browser. No build step or dependencies.
 
-## Deploy on GitHub Pages
-
-1. Push this folder to a GitHub repository.
-2. In the repository go to **Settings → Pages**.
-3. Under **Build and deployment**, choose **Deploy from a branch**, pick `main` and `/ (root)`, then save.
-4. The site is served at `https://<your-username>.github.io/<repository-name>/`.
-
-## Notes
-
-- Always review the generated SQL before running it against a database.
-- Table and schema names are fixed to `dfn_ntp.m149_notify_templates[_c]`.
-
 ## Licence
 
 Copyright (c) 2026 Chilanka Halpage. All rights reserved. See [LICENSE](LICENSE).

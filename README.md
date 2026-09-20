@@ -1,8 +1,7 @@
 # Notification Template SQL Generator
 
 A single-page web tool that generates Oracle `MERGE` (insert) and `MERGE ... WHEN MATCHED` (update)
-scripts for the notification template tables `dfn_ntp.m149_notify_templates` and
-`dfn_ntp.m149_notify_templates_c`.
+scripts for the notification template tables
 
 Type the Arabic text normally; the tool converts it to the escaped formats the database expects.
 

@@ -1,0 +1,17 @@
+Copyright (c) 2026 Chilanka Halpage. All rights reserved.
+
+Permission is granted to use this software, in the form published by the
+copyright holder, for personal or internal business purposes.
+
+Without prior written permission from the copyright holder, you may NOT:
+  - copy, modify, merge, publish, distribute, sublicense, or sell copies of
+    the software or any substantial portion of it;
+  - remove or alter this copyright notice or the copyright footer shown in
+    the application.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM THE
+USE OF THE SOFTWARE. Always review generated SQL before running it against
+a database.

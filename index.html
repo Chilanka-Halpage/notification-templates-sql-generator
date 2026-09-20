@@ -45,9 +45,9 @@ label{display:block;font-weight:600;font-size:12.5px;margin:10px 0 4px}
 label small{font-weight:400;color:var(--muted)}
 input,textarea,select{width:100%;background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit;outline:none;transition:.15s}
 input:focus,textarea:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(79,70,229,.18)}
-textarea{resize:vertical;min-height:70px}
+textarea{resize:vertical;min-height:110px;overflow:hidden}
 textarea.ar,input.ar{direction:rtl;text-align:right;font-size:16px;font-family:"Segoe UI","Tahoma","Arial",sans-serif}
-textarea.code{font-family:Consolas,monospace;font-size:12.5px;min-height:90px}
+textarea.code{font-family:Consolas,monospace;font-size:12.5px;min-height:220px}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:700px){.pair{grid-template-columns:1fr}}
 .tag{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--line);color:var(--muted);margin-left:6px;font-weight:600}
@@ -150,7 +150,6 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:8px 16px 24
     <div class="fhead"><label>Email template (Arabic) <small>— tags stay as-is, Arabic text is encoded</small></label>
       <select id="f_emL"><option value="html">&amp;#xXXXX;</option><option value="u">\uXXXX</option><option value="unistr">UNISTR</option></select></div>
     <textarea id="emL" class="ar code" dir="rtl" placeholder='<html dir="rtl"><body><p align="right">عزيزي العميل،</p></body></html>'></textarea>
-    <div class="fhead"><span></span><label style="margin:2px 0" class="upd-chk"><input type="checkbox" id="rtlWrap">auto-wrap in RTL html if no &lt;html&gt; tag</label></div>
     <div class="preview" id="p_emL"></div>
   </div>
 
@@ -248,15 +247,21 @@ function buildRebrand(content,header,rtl){
   const band=header?`<div style="background:${$('hdrColor').value}; padding:1px 40px;"><p style="color:#ffffff; font-size:24px; font-weight:700; line-height:1.2; ${dir}">${header}</p></div>`:'';
   return `<html><body style="font-family:Calibri;">${band}<div style="padding:20px 40px 0 40px;">${content}</div></body></html>`;
 }
+// Non-rebranded: user types body text only; the app adds <html><body><p>. A full <html> page is left untouched.
+function wrapPlain(content,rtl){
+  if(!content || /<html[\s>]/i.test(content)) return content;
+  const bm=/<body[^>]*>([\s\S]*)<\/body>/i.exec(content);
+  if(bm) content=bm[1].trim();
+  if(!/<(p|div|table)[\s>]/i.test(content))
+    content='<p'+(rtl?' align="right"':'')+'>'+content.replace(/\r?\n/g,'<br>')+'</p>';
+  return '<html'+(rtl?' dir="rtl"':'')+'><body>'+content+'</body></html>';
+}
 function emailEnglish(){
-  return $('rebrand').checked ? buildRebrand(val('em'),val('hdr')||val('sub'),false) : val('em');
+  return $('rebrand').checked ? buildRebrand(val('em'),val('hdr')||val('sub'),false) : wrapPlain(val('em'),false);
 }
 function emailArabic(){
-  let t=val('emL');
-  if($('rebrand').checked) return buildRebrand(t,val('hdrL')||val('subL'),true);
-  if($('rtlWrap').checked && t && !/<html/i.test(t))
-    t='<html dir="rtl"><body><p align="right">'+t.replace(/\r?\n/g,'<br>')+'</p></body></html>';
-  return t;
+  const t=val('emL');
+  return $('rebrand').checked ? buildRebrand(t,val('hdrL')||val('subL'),true) : wrapPlain(t,true);
 }
 // CLOB value: TO_CLOB('chunk1') || TO_CLOB('chunk2') ... (each SQL literal must stay under 4000 bytes)
 // Chunks are sized by their ENCODED byte length, so a template only splits when it really exceeds the limit.
@@ -363,9 +368,11 @@ function hl(sql){
 }
 
 let sqlText='';
+function grow(t){t.style.height='auto';t.style.height=(t.scrollHeight+4)+'px';}
 function render(){
-  $('csWrap').style.display=isC()?'':'none';
   $('hdrWrap').style.display=$('rebrand').checked?'':'none';
+  document.querySelectorAll('textarea').forEach(grow);
+  $('csWrap').style.display=isC()?'':'none';
   $('umWrap').style.display=$('rebrand').checked?'':'none';
   sqlText=build(); $('out').innerHTML=hl(sqlText);
   // previews + warnings
@@ -378,7 +385,7 @@ function render(){
 
 // ---- state ----
 const IDS=['u_cs','u_mode','rebrand','hdr','hdrL','hdrColor','table','cs','eventId','inst','customType','extId','sms','smsL','sub','subL','em','emL','push','pushL',
-  'f_smsL','f_subL','f_emL','f_pushL','u_sms','u_sub','u_em','u_push','rtlWrap','oDefOff','oCommit','oSkipEmpty'];
+  'f_smsL','f_subL','f_emL','f_pushL','u_sms','u_sub','u_em','u_push','oDefOff','oCommit','oSkipEmpty'];
 function state(){const s={};IDS.forEach(i=>s[i]=$(i).type==='checkbox'?$(i).checked:$(i).value);return s;}
 function apply(s){IDS.forEach(i=>{if(i in s){$(i).type==='checkbox'?$(i).checked=s[i]:$(i).value=s[i];}});}
 IDS.forEach(i=>{$(i).addEventListener('input',render);$(i).addEventListener('change',render);});

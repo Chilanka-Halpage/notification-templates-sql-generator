@@ -70,6 +70,23 @@ pre .k{color:var(--k);font-weight:600}pre .s{color:var(--s)}pre .n{color:var(--n
 .upd-chk{display:flex;align-items:center;gap:5px;font-weight:500;font-size:12px;color:var(--muted)}
 .upd-chk input{width:auto}
 footer{text-align:center;color:var(--muted);font-size:12.5px;padding:8px 16px 24px}
+.ptabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.ptab{padding:5px 13px;border-radius:999px;border:1px solid var(--line);background:var(--field);color:var(--muted);cursor:pointer;font-weight:600;font-size:12.5px}
+.ptab.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.ptab.lang{margin-left:auto}
+.previewBox{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--field)}
+.previewBox iframe{display:block;width:100%;height:420px;border:0;background:#fff}
+.sms-phone{max-width:320px;margin:10px auto;background:#e9edf3;border-radius:20px;padding:14px}
+.sms-bubble{background:#fff;border-radius:14px;padding:10px 14px;font-size:14.5px;line-height:1.45;color:#111;white-space:pre-wrap;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.sms-bubble.rtl{direction:rtl;text-align:right;font-family:"Segoe UI","Tahoma","Arial",sans-serif}
+.sms-bubble.empty{color:#9aa3b2;font-style:italic}
+.previewEmpty{padding:30px;text-align:center;color:var(--muted);font-style:italic}
+.push-card{background:rgba(255,255,255,.92);border-radius:16px;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,.12);backdrop-filter:blur(4px)}
+.push-head{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#6b7590;font-weight:600;margin-bottom:4px}
+.push-dot{width:16px;height:16px;border-radius:5px;background:var(--brand);display:inline-block}
+.push-body{font-size:14px;line-height:1.4;color:#111;white-space:pre-wrap;word-break:break-word}
+.push-body.rtl{direction:rtl;text-align:right;font-family:"Segoe UI","Tahoma","Arial",sans-serif}
+.push-body.empty{color:#9aa3b2;font-style:italic}
 </style>
 </head>
 <body>
@@ -185,6 +202,29 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:8px 16px 24
         <button class="btn line" id="dl">Download .sql</button>
         <span class="msg" id="msg"></span>
         <span class="warn" id="warns"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><i>👁</i> Preview</h2>
+      <div class="ptabs">
+        <div class="ptab on" data-ptype="email">Email</div>
+        <div class="ptab" data-ptype="sms">SMS</div>
+        <div class="ptab" data-ptype="push">Push</div>
+        <div class="ptab lang on" data-plang="en">English</div>
+        <div class="ptab" data-plang="ar">Arabic</div>
+      </div>
+      <div class="previewBox" id="emailPreviewBox"><iframe id="emailFrame" sandbox=""></iframe></div>
+      <div id="smsPreviewBox" style="display:none">
+        <div class="sms-phone"><div class="sms-bubble" id="smsBubble"></div></div>
+      </div>
+      <div id="pushPreviewBox" style="display:none">
+        <div class="sms-phone">
+          <div class="push-card">
+            <div class="push-head"><span class="push-dot"></span>Notification &nbsp;·&nbsp; now</div>
+            <div class="push-body" id="pushBubble"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -311,10 +351,26 @@ function genInsert(){
   const ct=val('customType')?plain(val('customType')):'NULL', ext=val('extId')?plain(val('extId')):'NULL';
   const cols=['m149_id','m149_event_id_m148',...f.slice(0,2).map(x=>x.col),...f.slice(2,4).map(x=>x.col),...f.slice(4,6).map(x=>x.col),
     'm149_institute_id_m02','m149_custom_type','m149_extnl_template_id',...f.slice(6).map(x=>x.col)];
+  // A single explicit institute ID needs no PL/SQL loop — insert directly for that one institute.
+  const ids=val('inst').split(/[\s,;]+/).filter(x=>/^\d+$/.test(x));
+  const single=ids.length===1?ids[0]:null;
   const vals=['(SELECT NVL (MAX (m149_id), 0) + 1\n                      FROM '+TBL()+')',ev,
-    ...f.slice(0,6).map(x=>x.v),'i.institute_id',ct,ext,...f.slice(6).map(x=>x.v)];
+    ...f.slice(0,6).map(x=>x.v),single||'i.institute_id',ct,ext,...f.slice(6).map(x=>x.v)];
   if($('rebrand').checked){cols.push('m149_template_mode');vals.push('1');}
   if(isC()){cols.push('m149_change_status');vals.push($('cs').value);}
+  const commit=$('oCommit').checked;
+  if(single){
+    const I='                ', V='                   ';
+    return `MERGE INTO ${TBL()}
+     USING DUAL
+        ON (    m149_event_id_m148 = ${ev}
+            AND m149_institute_id_m02 = ${single})
+WHEN NOT MATCHED
+THEN
+    INSERT     (${cols.join(',\n'+I)})
+    VALUES (
+               ${vals.join(',\n'+V)});${commit?'\n\nCOMMIT;':''}`;
+  }
   const I='                        ', V='                   ';
   return `BEGIN
     FOR i IN (SELECT m02_id AS institute_id
@@ -330,7 +386,7 @@ function genInsert(){
             INSERT     (${cols.join(',\n'+I)})
             VALUES (
                        ${vals.join(',\n'+V)});
-    END LOOP;${$('oCommit').checked?'\n    COMMIT;':''}
+    END LOOP;${commit?'\n    COMMIT;':''}
 END;
 /`;
 }
@@ -374,6 +430,38 @@ function hl(sql){
   return out+esc(sql.slice(last));
 }
 
+// ---- live preview (email HTML / SMS bubble, English or Arabic) ----
+let pType='email', pLang='en';
+// All three previews are always (re)rendered, regardless of which is shown — only
+// visibility toggles between tabs. This keeps the hidden iframe's content current, so
+// switching email -> sms -> email back never shows a stale/blank frame.
+// Display-only: wrap ${Var} in invisible LRM marks so the browser's RTL bidi algorithm
+// can't flip it to {Var}$ when shown inside right-to-left text. val() already strips
+// these marks, so they never reach the generated SQL — this only affects what's drawn.
+const rtlDisplay = s => s.replace(/\$\{[^}]*\}/g,m=>'‎'+m+'‎');
+function fillBubble(el,text,empty){
+  el.textContent = text ? (pLang==='ar'?rtlDisplay(text):text) : empty;
+  el.classList.toggle('empty',!text); el.classList.toggle('rtl',pLang==='ar');
+}
+function renderPreview(){
+  $('emailPreviewBox').style.display = pType==='email' ? '' : 'none';
+  $('smsPreviewBox').style.display = pType==='sms' ? '' : 'none';
+  $('pushPreviewBox').style.display = pType==='push' ? '' : 'none';
+
+  let emailHtml = pLang==='en' ? emailEnglish() : emailArabic();
+  if(pLang==='ar' && emailHtml) emailHtml=rtlDisplay(emailHtml);
+  $('emailFrame').srcdoc = emailHtml || '<html><body style="font-family:Segoe UI,Arial,sans-serif;color:#9aa3b2;font-style:italic;padding:30px;text-align:center;">No email content yet</body></html>';
+
+  fillBubble($('smsBubble'), pLang==='en' ? val('sms') : val('smsL'), pLang==='en' ? 'No SMS content yet' : 'لا يوجد محتوى بعد');
+  fillBubble($('pushBubble'), pLang==='en' ? val('push') : val('pushL'), pLang==='en' ? 'No push content yet' : 'لا يوجد محتوى بعد');
+}
+document.querySelectorAll('.ptab[data-ptype]').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.ptab[data-ptype]').forEach(x=>x.classList.remove('on'));t.classList.add('on');
+  pType=t.dataset.ptype;renderPreview();});
+document.querySelectorAll('.ptab[data-plang]').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.ptab[data-plang]').forEach(x=>x.classList.remove('on'));t.classList.add('on');
+  pLang=t.dataset.plang;renderPreview();});
+
 let sqlText='';
 function grow(t){t.style.height='auto';t.style.height=(t.scrollHeight+4)+'px';}
 function render(){
@@ -388,6 +476,7 @@ function render(){
   $('p_emL').textContent=emailArabic()?ENC[$('f_emL').value](emailArabic()):'';
   const big=[...sqlText.matchAll(/'(?:[^']|'')*'/g)].filter(m=>m[0].length>4002).length;
   $('warns').textContent=big?`⚠ ${big} literal(s) exceed 4000 chars — Oracle SQL limit`:'';
+  renderPreview();
 }
 
 // ---- state ----
